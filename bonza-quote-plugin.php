@@ -19,6 +19,9 @@ class BonzaQuotePlugin
     {
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('init', [$this, 'register_post_type']);
+        add_shortcode('bonza_quote_form', [$this, 'render_quote_form']);
+        add_action('admin_post_nopriv_bonza_submit_quote', [$this, 'handle_form_submission']);
+        add_action('admin_post_bonza_submit_quote', [$this, 'handle_form_submission']);
     }
 
     public function render_admin_page()
@@ -68,6 +71,59 @@ class BonzaQuotePlugin
             'show_ui' => false,
             'supports' => ['title', 'custom-fields'],
         ]);
+    }
+
+    public function render_quote_form()
+    {
+        ob_start();
+?>
+        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+            <input type="hidden" name="action" value="bonza_submit_quote">
+            <p><label>Name:<br><input type="text" name="bonza_name" required></label></p>
+            <p><label>Email:<br><input type="email" name="bonza_email" required></label></p>
+            <p><label>Service Type:<br><input type="text" name="bonza_service_type" required></label></p>
+            <p><label>Notes:<br><textarea name="bonza_notes"></textarea></label></p>
+            <p><input type="submit" value="Request Quote"></p>
+        </form>
+<?php
+        return ob_get_clean();
+    }
+
+    public function handle_form_submission()
+    {
+        $name = sanitize_text_field($_POST['bonza_name']);
+        $email = sanitize_email($_POST['bonza_email']);
+        $service_type = sanitize_text_field($_POST['bonza_service_type']);
+        $notes = sanitize_textarea_field($_POST['bonza_notes']);
+
+        $post_id = wp_insert_post([
+            'post_type' => 'bonza_quote',
+            'post_title' => $name,
+            'post_status' => 'publish',
+            'meta_input' => [
+                'email' => $email,
+                'service_type' => $service_type,
+                'notes' => $notes,
+                'status' => 'pending'
+            ]
+        ]);
+
+        if ($post_id && !is_wp_error($post_id)) {
+            // Send email to admin
+            $admin_email = get_option('admin_email');
+            $subject = 'New Quote Submission';
+            $message = "A new quote has been submitted:\n\n";
+            $message .= "Name: $name\n";
+            $message .= "Email: $email\n";
+            $message .= "Service Type: $service_type\n";
+            $message .= "Notes: $notes\n";
+            $message .= "Status: pending\n";
+
+            wp_mail($admin_email, $subject, $message);
+        }
+
+        wp_redirect(add_query_arg('quote_submitted', '1', wp_get_referer()));
+        exit;
     }
 }
 
