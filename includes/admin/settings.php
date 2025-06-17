@@ -72,6 +72,10 @@ class BonzaQuotePlugin
     public function render_quote_form()
     {
         ob_start();
+
+        if (isset($_GET['quote_submitted']) && $_GET['quote_submitted'] == '1') {
+            echo '<div class="notice notice-success"><p>Thank you! Your quote request has been submitted.</p></div>';
+        }
 ?>
         <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
             <input type="hidden" name="action" value="bonza_submit_quote">
