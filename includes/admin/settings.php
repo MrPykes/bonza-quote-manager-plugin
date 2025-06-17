@@ -78,6 +78,7 @@ class BonzaQuotePlugin
         }
 ?>
         <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+            <?php wp_nonce_field('bonza_submit_quote_action', 'bonza_quote_nonce'); ?>
             <input type="hidden" name="action" value="bonza_submit_quote">
             <p><label>Name:<br><input type="text" name="bonza_name" required></label></p>
             <p><label>Email:<br><input type="email" name="bonza_email" required></label></p>
@@ -91,6 +92,9 @@ class BonzaQuotePlugin
 
     public function handle_form_submission()
     {
+        if (!isset($_POST['bonza_quote_nonce']) || !wp_verify_nonce($_POST['bonza_quote_nonce'], 'bonza_submit_quote_action')) {
+            wp_die('Security check failed.');
+        }
         $name = sanitize_text_field($_POST['bonza_name']);
         $email = sanitize_email($_POST['bonza_email']);
         $service_type = sanitize_text_field($_POST['bonza_service_type']);
@@ -110,8 +114,7 @@ class BonzaQuotePlugin
 
         if ($post_id && !is_wp_error($post_id)) {
             // Send email to admin
-            // $admin_email = get_option('admin_email');
-            $admin_email = 'ed@storytimepods.com.au';
+            $admin_email = get_option('admin_email');
             $subject = 'New Quote Submission';
             $message = "A new quote has been submitted:\n\n";
             $message .= "Name: $name\n";
