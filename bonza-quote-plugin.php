@@ -23,9 +23,18 @@ class BonzaQuotePlugin
         add_action('admin_post_nopriv_bonza_submit_quote', [$this, 'handle_form_submission']);
         add_action('admin_post_bonza_submit_quote', [$this, 'handle_form_submission']);
     }
+    public function add_admin_menu()
+    {
+        add_menu_page('Bonza Quotes', 'Bonza Quotes', 'manage_options', 'bonza_quotes', [$this, 'render_admin_page']);
+    }
 
     public function render_admin_page()
     {
+
+        if (isset($_POST['bonza_change_status']) && current_user_can('manage_options')) {
+            update_post_meta(intval($_POST['quote_id']), 'status', sanitize_text_field($_POST['new_status']));
+        }
+
         $quotes = get_posts(['post_type' => 'bonza_quote', 'numberposts' => -1]);
         echo '<div class="wrap"><h1>Bonza Quotes</h1><table class="wp-list-table widefat"><thead><tr><th>Name</th><th>Email</th><th>Service</th><th>Status</th><th>Action</th></tr></thead><tbody>';
 
@@ -52,12 +61,6 @@ class BonzaQuotePlugin
         }
 
         echo '</tbody></table></div>';
-
-        if (isset($_POST['bonza_change_status']) && current_user_can('manage_options')) {
-            update_post_meta(intval($_POST['quote_id']), 'status', sanitize_text_field($_POST['new_status']));
-            wp_redirect(admin_url('admin.php?page=bonza_quotes'));
-            exit;
-        }
     }
 
     public function register_post_type()
@@ -110,7 +113,8 @@ class BonzaQuotePlugin
 
         if ($post_id && !is_wp_error($post_id)) {
             // Send email to admin
-            $admin_email = get_option('admin_email');
+            // $admin_email = get_option('admin_email');
+            $admin_email = 'ed@storytimepods.com.au';
             $subject = 'New Quote Submission';
             $message = "A new quote has been submitted:\n\n";
             $message .= "Name: $name\n";
