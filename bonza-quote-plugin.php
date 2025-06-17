@@ -18,6 +18,7 @@ class BonzaQuotePlugin
     public function __construct()
     {
         add_action('admin_menu', [$this, 'add_admin_menu']);
+        add_action('init', [$this, 'register_post_type']);
     }
 
     public function render_admin_page()
@@ -54,6 +55,19 @@ class BonzaQuotePlugin
             wp_redirect(admin_url('admin.php?page=bonza_quotes'));
             exit;
         }
+    }
+
+    public function register_post_type()
+    {
+        register_post_type('bonza_quote', [
+            'labels' => [
+                'name' => 'Quotes',
+                'singular_name' => 'Quote',
+            ],
+            'public' => false,
+            'show_ui' => false,
+            'supports' => ['title', 'custom-fields'],
+        ]);
     }
 }
 
