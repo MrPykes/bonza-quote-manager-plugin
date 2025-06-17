@@ -1,0 +1,1 @@
+# bonza-quote-manager-plugin
